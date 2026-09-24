@@ -1,0 +1,195 @@
+package com.example.travelease.viewmodel
+
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.travelease.model.EncuestaDto
+import com.example.travelease.model.LoginDto
+import com.example.travelease.model.Reserva
+import com.example.travelease.model.ValoracionDto
+import com.example.travelease.model.SugerenciaDto
+import com.example.travelease.repository.ClienteRepository
+import com.example.travelease.network.RetrofitClient
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class ClienteViewModel : ViewModel() {
+
+    // Variable para guardar el token de seguridad fijo que ya sabemos que funciona
+    companion object {
+        var authToken: String = "Token c76748c65d236812c270c65d54912eaaec42ded4"
+    }
+
+    private val repository = ClienteRepository()
+
+    private val _estadoMensaje = MutableStateFlow("")
+    val estadoMensaje: StateFlow<String> = _estadoMensaje
+
+    private val _listaReservas = MutableStateFlow<List<Reserva>>(emptyList())
+    val listaReservas: StateFlow<List<Reserva>> = _listaReservas
+
+    var loginMessage = mutableStateOf("")
+        private set
+
+    var viajesAValorar = mutableStateListOf<Reserva>()
+        private set
+
+    // 1. Función para Iniciar Sesión
+    fun iniciarSesion(correo: String, clave: String) {
+        viewModelScope.launch {
+            try {
+                val credenciales = LoginDto(username = correo, password = clave)
+                val response = RetrofitClient.apiService.login(credenciales)
+
+                if (response.isSuccessful) {
+                    val loginData = response.body()
+                    val rol = loginData?.rol
+                    loginMessage.value = "¡Login Exitoso! Bienvenido $rol"
+                    println("Respuesta del servidor: Login exitoso, Rol: $rol")
+                } else {
+                    loginMessage.value = "Error: Credenciales incorrectas o usuario no existe."
+                    println("Error en el servidor: Código ${response.code()}")
+                }
+            } catch (e: Exception) {
+                loginMessage.value = "Error de conexión. Verifica tu red."
+                println("Fallo de red: ${e.message}")
+            }
+        }
+    }
+
+    // 2. Función para obtener las reservas
+    fun cargarReservas() {
+        viewModelScope.launch {
+            try {
+                println("=== USANDO TOKEN FIJO PARA RESERVAS: '$authToken' ===")
+                val response = RetrofitClient.apiService.getReservas(token = authToken)
+                if (response.isSuccessful) {
+                    _listaReservas.value = response.body() ?: emptyList()
+                    println("✅ DATOS RECIBIDOS DE DJANGO: ${response.body()}")
+                } else {
+                    _estadoMensaje.value = "Error del servidor: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _estadoMensaje.value = "Fallo de conexión"
+                println("🚨 ERROR FATAL RED: ${e.message}")
+            }
+        }
+    }
+
+    // 3. Función para enviar valoraciones
+    fun enviarvaloracion(
+        idDeLaReserva: Int,
+        paquete: String,
+        estrellas: Int,
+        comentario: String
+    ) {
+        _estadoMensaje.value = "Enviando valoración, por favor espera..."
+
+        viewModelScope.launch {
+            try {
+                val nuevaValoracion = ValoracionDto(
+                    idCliente = 1,
+                    cedulaCliente = "288-130788-0000E",
+                    nombreCliente = "Jonathan",
+                    numeroTelefono = "87414594",
+                    idReserva = idDeLaReserva,
+                    puntaje = estrellas,
+                    comentario = comentario,
+                    nombre = paquete,
+                    descripcion = "Reseña desde la app",
+                    precio = 5000.0
+                )
+
+                println("🔑 TOKEN QUE ESTOY ENVIANDO A VALORACIONES: $authToken")
+                repository.enviarValoracion(authToken, nuevaValoracion)
+                println("✅ ÉXITO: Valoración enviada")
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println("🚨 ERROR AL ENVIAR VALORACIÓN: ${e.message}")
+            }
+        }
+    }
+
+    // 4. Obtener viajes para valorar
+    fun obtenerViajesParaValorar() {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.apiService.getReservas(authToken)
+                if (response.isSuccessful) {
+                    val reservasDelBackend = response.body() ?: emptyList()
+                    viajesAValorar.clear()
+                    viajesAValorar.addAll(reservasDelBackend)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // 5. Función para enviar sugerencias
+    fun enviarSugerencia(textoMensaje: String) {
+        viewModelScope.launch {
+            try {
+                val nuevaSugerencia = SugerenciaDto(
+                    comentario = textoMensaje,
+                    asunto = "Sugerencia desde la App Android"
+                )
+
+                println("🔑 TOKEN QUE ESTOY ENVIANDO A SUGERENCIAS: $authToken")
+                repository.enviarSugerencia(authToken, nuevaSugerencia)
+                println("✅ ÉXITO: Sugerencia enviada por el ViewModel")
+            } catch (e: Exception) {
+                println("🚨 ERROR AL ENVIAR SUGERENCIA: ${e.message}")
+            }
+        }
+    }
+
+    fun enviarEncuesta(
+        atencionAlCliente: Int,
+        facilidadReserva: Int,
+        relacionCalidadPrecio: Int,
+        calidadServicioProporcionado: Int,
+        caracteristicaFav: String,
+        informacionProporcionadaSencilla: Int,
+        recomendarAOtros: Int,
+        volverContratar: Int,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val encuestaDto = EncuestaDto(
+                    atencionAlCliente = atencionAlCliente,
+                    facilidadReserva = facilidadReserva,
+                    relacionCalidadPrecio = relacionCalidadPrecio,
+                    calidadServicioProporcionado = calidadServicioProporcionado,
+                    caracteristicaFav = caracteristicaFav,
+                    informacionProporcionadaSencilla = informacionProporcionadaSencilla,
+                    recomendarAOtros = recomendarAOtros,
+                    volverContratar = volverContratar
+                )
+
+                println("🔑 TOKEN QUE ESTOY ENVIANDO A ENCUESTAS: $authToken")
+                // Usamos authToken directamente, igual que en tus otras funciones exitosas
+                val response = RetrofitClient.apiService.postEncuestaSatisfaccion(authToken, encuestaDto)
+
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "Error ${response.code()}"
+                    onError(errorBody)
+                }
+            } catch (e: Exception) {
+                onError("Excepción: ${e.message}")
+            }
+        }
+    }
+    // 7. Cerrar sesión
+    fun cerrarSesion() {
+        loginMessage.value = ""
+    }
+}
