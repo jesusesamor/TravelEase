@@ -7,7 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft // 👈 El icono exacto de tu imagen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,11 +40,14 @@ fun EncuestaScreen(viewModel: ClienteViewModel, onNavigateBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
             .background(Color(0xFFF5F5F5))
-            .padding(16.dp),
+            .systemBarsPadding()
+            .padding(16.dp)
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        // Título limpio y centrado
         Text(
             text = "Encuesta de Satisfacción",
             fontSize = 22.sp,
@@ -125,7 +128,7 @@ fun EncuestaScreen(viewModel: ClienteViewModel, onNavigateBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 8. ¿Cuál fue tu característica favorita? (Texto ubicado al final antes de enviar)
+        // 8. ¿Cuál fue tu característica favorita?
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -149,10 +152,9 @@ fun EncuestaScreen(viewModel: ClienteViewModel, onNavigateBack: () -> Unit) {
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        // --- BOTÓN ENVIAR ---
-        // --- BOTÓN ENVIAR ---
+        // --- BOTÓN ENVIAR (Vuelve a ser de ancho completo) ---
         Button(
             onClick = {
                 viewModel.enviarEncuesta(
@@ -182,7 +184,28 @@ fun EncuestaScreen(viewModel: ClienteViewModel, onNavigateBack: () -> Unit) {
         ) {
             Text("Enviar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
-        // --- ESPACIO EXTRA DE RESPIRO PARA QUE EL TECLADO NO OCULTE NADA ---
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 👉 LA FLECHA MINIMALISTA (Abajo, separada y a la izquierda)
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.CenterStart // La empuja totalmente a la izquierda
+        ) {
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Regresar",
+                    tint = Color.Gray, // Un tono sutil como en tu imagen
+                    modifier = Modifier.size(32.dp) // Tamaño ligeramente más grande
+                )
+            }
+        }
+
+        // --- ESPACIO EXTRA DE RESPIRO ---
         Spacer(modifier = Modifier.height(250.dp))
     }
 }
@@ -278,7 +301,6 @@ fun PreguntaSiNoCard(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Opción Sí (1)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clickable { onSeleccion(1) }
@@ -288,7 +310,6 @@ fun PreguntaSiNoCard(
                     Text(text = "Sí", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
 
-                // Opción No (0)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clickable { onSeleccion(0) }

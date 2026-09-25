@@ -1,11 +1,12 @@
 package com.example.travelease.view
 
+import android.content.Context // 👈 Importación para SharedPreferences
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,8 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.travelease.R
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelease.viewmodel.ClienteViewModel
 
 @Composable
@@ -27,8 +26,14 @@ fun ClienteScreen(
     onNavigateToMisReservas: () -> Unit,
     onNavigateToSugerencias: () -> Unit,
     onNavigateToEncuesta: () -> Unit
-
 ) {
+    // Obtenemos el contexto de la pantalla
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    // 👉 1. ABRIMOS LA BÓVEDA Y SACAMOS EL NOMBRE REAL DEL USUARIO
+    val sharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
+    val nombreReal = sharedPreferences.getString("NOMBRE", "Cliente") ?: "Cliente"
+
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5)),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -44,7 +49,13 @@ fun ClienteScreen(
                 .padding(vertical = 40.dp), // Un poco más de espacio arriba
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "Hola, Luis García", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            // 👉 2. REEMPLAZAMOS EL TEXTO QUEMADO POR LA VARIABLE DINÁMICA
+            Text(
+                text = "Hola, $nombreReal",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -54,19 +65,20 @@ fun ClienteScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // --- BOTONES GRANDES (TARJETAS) ---
-        // Recuerda poner aquí tus nombres reales de drawable
         MenuButton(
             text = "Valoraciones",
             imageResId = R.drawable.icono_valoraciones,
             onClick = onNavigateToMisReservas
         )
-        Spacer(modifier = Modifier.height(24.dp)) // Más separación entre tarjetas
+        Spacer(modifier = Modifier.height(24.dp))
+
         MenuButton(
             text = "Sugerencias",
             imageResId = R.drawable.icono_sugerencias,
             onClick = onNavigateToSugerencias
         )
-        Spacer(modifier = Modifier.height(24.dp)) // Más separación entre tarjetas
+        Spacer(modifier = Modifier.height(24.dp))
+
         MenuButton(
             text = "Encuesta de satisfacción",
             imageResId = R.drawable.icono_encuesta,
@@ -83,14 +95,14 @@ fun ClienteScreen(
         ) {
             Button(
                 onClick = {
-                    viewModel.cerrarSesion() // Borramos la memoria
+                    // Borramos la sesión física y en memoria
+                    viewModel.cerrarSesion(context)
                     onNavigateBack()         // Regresamos al Login
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF64B5F6)),
                 shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp) // Esto le da buen espacio interno
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                // Aquí está el icono de la puertita
                 Icon(
                     imageVector = Icons.Filled.ExitToApp,
                     contentDescription = "Cerrar sesión",
@@ -98,10 +110,8 @@ fun ClienteScreen(
                     modifier = Modifier.size(20.dp)
                 )
 
-                // Un pequeño espacio entre el icono y el texto
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // El texto
                 Text("Cerrar sesión", color = Color.White, fontWeight = FontWeight.Medium)
             }
         }
@@ -114,10 +124,10 @@ fun MenuButton(text: String, imageResId: Int, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth(0.9f) // Ahora ocupa casi todo el ancho
-            .height(90.dp),     // ¡Mucho más altas! De 65dp pasamos a 90dp
+            .fillMaxWidth(0.9f)
+            .height(90.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp), // Sombra más marcada
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(16.dp),
         contentPadding = PaddingValues(horizontal = 20.dp)
     ) {
@@ -128,10 +138,10 @@ fun MenuButton(text: String, imageResId: Int, onClick: () -> Unit) {
             Image(
                 painter = painterResource(id = imageResId),
                 contentDescription = null,
-                modifier = Modifier.size(48.dp) // Iconos más grandes
+                modifier = Modifier.size(48.dp)
             )
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = text, fontSize = 18.sp, color = Color.Black, fontWeight = FontWeight.Medium) // Texto más grande
+            Text(text = text, fontSize = 18.sp, color = Color.Black, fontWeight = FontWeight.Medium)
         }
     }
 }

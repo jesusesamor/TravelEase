@@ -14,6 +14,7 @@ import retrofit2.http.POST
 
 interface TravelEaseApi {
 
+    // 🚨 CAMBIA LA RUTA AQUÍ POR LA QUE DICE BRUNO EN LA CARPETA CLIENTS_MOBILE
     @GET("api/clients-mobile/reservas/")
     suspend fun getReservas(
         @Header("Authorization") token: String

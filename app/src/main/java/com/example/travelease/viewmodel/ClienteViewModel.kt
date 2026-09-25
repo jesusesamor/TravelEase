@@ -1,5 +1,6 @@
 package com.example.travelease.viewmodel
 
+import android.content.Context // 👈 IMPORTACIÓN NECESARIA PARA SHAREDPREFERENCES
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -17,9 +18,9 @@ import kotlinx.coroutines.launch
 
 class ClienteViewModel : ViewModel() {
 
-    // Variable para guardar el token de seguridad fijo que ya sabemos que funciona
+    // Empezamos con el token vacío en memoria
     companion object {
-        var authToken: String = "Token c76748c65d236812c270c65d54912eaaec42ded4"
+        var authToken: String = ""
     }
 
     private val repository = ClienteRepository()
@@ -36,8 +37,8 @@ class ClienteViewModel : ViewModel() {
     var viajesAValorar = mutableStateListOf<Reserva>()
         private set
 
-    // 1. Función para Iniciar Sesión
-    fun iniciarSesion(correo: String, clave: String) {
+    // 1. Función para Iniciar Sesión (¡Ahora recibe el Context para guardar en disco!)
+    fun iniciarSesion(context: Context, correo: String, clave: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
                 val credenciales = LoginDto(username = correo, password = clave)
@@ -45,16 +46,35 @@ class ClienteViewModel : ViewModel() {
 
                 if (response.isSuccessful) {
                     val loginData = response.body()
-                    val rol = loginData?.rol
-                    loginMessage.value = "¡Login Exitoso! Bienvenido $rol"
-                    println("Respuesta del servidor: Login exitoso, Rol: $rol")
+                    val tokenLimpio = loginData?.token ?: ""
+                    val rolUsuario = loginData?.rol ?: "cliente"
+                    val nombreUsuario = loginData?.username ?: correo
+
+                    // 1. Guardamos en la memoria temporal (añadiendo el prefijo "Token ")
+                    authToken = "Token $tokenLimpio"
+
+                    // 2. 💾 PERSISTENCIA: Guardamos en el disco duro del teléfono
+                    val sharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
+                    sharedPreferences.edit().apply {
+                        putString("TOKEN", tokenLimpio) // Guardamos el token limpio
+                        putString("ROL", rolUsuario)    // Guardamos el rol
+                        putString("NOMBRE", nombreUsuario) // Guardamos el nombre o correo
+                        apply() // Se ejecuta de forma asíncrona y segura
+                    }
+
+                    loginMessage.value = "¡Login Exitoso! Bienvenido $rolUsuario"
+                    println("✅ MÁSTER DEBUG: Token y datos guardados exitosamente en SharedPreferences")
+
+                    // 👉 Solo avanzamos de pantalla cuando todo está seguro
+                    onSuccess()
+
                 } else {
-                    loginMessage.value = "Error: Credenciales incorrectas o usuario no existe."
-                    println("Error en el servidor: Código ${response.code()}")
+                    loginMessage.value = "Error: Credenciales incorrectas."
+                    println("🚨 Error de login: ${response.code()}")
                 }
             } catch (e: Exception) {
-                loginMessage.value = "Error de conexión. Verifica tu red."
-                println("Fallo de red: ${e.message}")
+                loginMessage.value = "Error de conexión."
+                println("🚨 Fallo de red en login: ${e.message}")
             }
         }
     }
@@ -63,13 +83,14 @@ class ClienteViewModel : ViewModel() {
     fun cargarReservas() {
         viewModelScope.launch {
             try {
-                println("=== USANDO TOKEN FIJO PARA RESERVAS: '$authToken' ===")
+                println("=== 🚀 ENVIANDO A DJANGO - AUTH_HEADER: '$authToken' ===")
                 val response = RetrofitClient.apiService.getReservas(token = authToken)
                 if (response.isSuccessful) {
                     _listaReservas.value = response.body() ?: emptyList()
                     println("✅ DATOS RECIBIDOS DE DJANGO: ${response.body()}")
                 } else {
                     _estadoMensaje.value = "Error del servidor: ${response.code()}"
+                    println("🚨 ERROR AL CARGAR RESERVAS: Código ${response.code()}")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -93,7 +114,7 @@ class ClienteViewModel : ViewModel() {
                 val nuevaValoracion = ValoracionDto(
                     idCliente = 1,
                     cedulaCliente = "288-130788-0000E",
-                    nombreCliente = "Jonathan",
+                    nombreCliente = "Jonathan", // Podríamos luego sacar esto de SharedPreferences
                     numeroTelefono = "87414594",
                     idReserva = idDeLaReserva,
                     puntaje = estrellas,
@@ -148,6 +169,7 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
+    // 6. Función para enviar encuestas
     fun enviarEncuesta(
         atencionAlCliente: Int,
         facilidadReserva: Int,
@@ -174,7 +196,6 @@ class ClienteViewModel : ViewModel() {
                 )
 
                 println("🔑 TOKEN QUE ESTOY ENVIANDO A ENCUESTAS: $authToken")
-                // Usamos authToken directamente, igual que en tus otras funciones exitosas
                 val response = RetrofitClient.apiService.postEncuestaSatisfaccion(authToken, encuestaDto)
 
                 if (response.isSuccessful) {
@@ -188,8 +209,17 @@ class ClienteViewModel : ViewModel() {
             }
         }
     }
-    // 7. Cerrar sesión
-    fun cerrarSesion() {
+
+    // 7. Función para Cerrar Sesión (¡Ahora borra físicamente los datos!)
+    fun cerrarSesion(context: Context) {
+        // 1. Limpiamos memoria temporal
         loginMessage.value = ""
+        authToken = ""
+
+        // 2. 🧹 MAGIA DE SEGURIDAD: Destruimos todo en SharedPreferences
+        val sharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
+        sharedPreferences.edit().clear().apply()
+
+        println("🔒 Sesión cerrada: Memoria temporal y disco duro limpiados. Listo para otro usuario.")
     }
 }

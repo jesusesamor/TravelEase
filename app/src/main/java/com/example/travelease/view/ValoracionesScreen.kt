@@ -46,6 +46,7 @@ fun ValoracionesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding() // 👈 Escudo protector para que no se superponga con la barra del celular
                 .padding(16.dp)
                 // 1. ESTO HACE QUE LA PANTALLA SE PUEDA DESLIZAR ARRIBA Y ABAJO:
                 .verticalScroll(rememberScrollState())
@@ -116,12 +117,12 @@ fun ValoracionesScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
+            // --- BOTÓN ENVIAR ---
             Button(
                 onClick = {
                     // 1. ¡AHORA SÍ ENVIAMOS LOS DATOS A DJANGO!
-                    // Usamos las variables que ya tienes en tu pantalla
                     viewModel.enviarvaloracion(
                         idDeLaReserva = idReserva.toIntOrNull() ?: 1,
                         paquete = paquete,
@@ -131,22 +132,39 @@ fun ValoracionesScreen(
 
                     // 2. Mostrar el mensaje flotante confirmando la acción al usuario
                     android.widget.Toast.makeText(context, "¡Valoración enviada exitosamente!", android.widget.Toast.LENGTH_SHORT).show()
+                    onNavigateBack() // Regresa después de enviar, como en las otras pantallas
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(size = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(size = 12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colorAzul)
             ) {
-                Text(text = "Enviar", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(text = "Enviar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.padding(16.dp)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 👉 LA FLECHA MINIMALISTA (Abajo, separada y a la izquierda)
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterStart // Empuja la flecha a la izquierda
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Regresar"
-                )
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Regresar",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
+
+            // Espacio de respiro para que el teclado no tape la flecha
+            Spacer(modifier = Modifier.height(100.dp))
+        }
     }
-}
 }
