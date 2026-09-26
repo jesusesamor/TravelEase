@@ -1,6 +1,6 @@
 package com.example.travelease.viewmodel
 
-import android.content.Context // 👈 IMPORTACIÓN NECESARIA PARA SHAREDPREFERENCES
+import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -34,10 +34,15 @@ class ClienteViewModel : ViewModel() {
     var loginMessage = mutableStateOf("")
         private set
 
+    // 👉 ESTA ES LA FUNCIÓN NUEVA YA UBICADA
+    fun limpiarMensaje() {
+        loginMessage.value = ""
+    }
+
     var viajesAValorar = mutableStateListOf<Reserva>()
         private set
 
-    // 1. Función para Iniciar Sesión (¡Ahora recibe el Context para guardar en disco!)
+    // 1. Función para Iniciar Sesión
     fun iniciarSesion(context: Context, correo: String, clave: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
@@ -50,16 +55,16 @@ class ClienteViewModel : ViewModel() {
                     val rolUsuario = loginData?.rol ?: "cliente"
                     val nombreUsuario = loginData?.username ?: correo
 
-                    // 1. Guardamos en la memoria temporal (añadiendo el prefijo "Token ")
+                    // 1. Guardamos en la memoria temporal
                     authToken = "Token $tokenLimpio"
 
                     // 2. 💾 PERSISTENCIA: Guardamos en el disco duro del teléfono
                     val sharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
                     sharedPreferences.edit().apply {
-                        putString("TOKEN", tokenLimpio) // Guardamos el token limpio
-                        putString("ROL", rolUsuario)    // Guardamos el rol
-                        putString("NOMBRE", nombreUsuario) // Guardamos el nombre o correo
-                        apply() // Se ejecuta de forma asíncrona y segura
+                        putString("TOKEN", tokenLimpio)
+                        putString("ROL", rolUsuario)
+                        putString("NOMBRE", nombreUsuario)
+                        apply()
                     }
 
                     loginMessage.value = "¡Login Exitoso! Bienvenido $rolUsuario"
@@ -114,7 +119,7 @@ class ClienteViewModel : ViewModel() {
                 val nuevaValoracion = ValoracionDto(
                     idCliente = 1,
                     cedulaCliente = "288-130788-0000E",
-                    nombreCliente = "Jonathan", // Podríamos luego sacar esto de SharedPreferences
+                    nombreCliente = "Jonathan",
                     numeroTelefono = "87414594",
                     idReserva = idDeLaReserva,
                     puntaje = estrellas,
@@ -210,7 +215,7 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
-    // 7. Función para Cerrar Sesión (¡Ahora borra físicamente los datos!)
+    // 7. Función para Cerrar Sesión
     fun cerrarSesion(context: Context) {
         // 1. Limpiamos memoria temporal
         loginMessage.value = ""

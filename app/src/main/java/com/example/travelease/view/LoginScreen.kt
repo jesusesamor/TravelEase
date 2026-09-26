@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext // 👈 IMPORTACIÓN DEL CONTEXT
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -30,7 +30,7 @@ fun LoginScreen(
     var contrasena by remember { mutableStateOf("") }
     val mensajeRespuesta = viewModel.loginMessage.value
 
-    // 👉 NUEVO: Obtenemos el contexto de Android para que el ViewModel guarde el token
+    // Obtenemos el contexto de Android para que el ViewModel guarde el token
     val context = LocalContext.current
 
     Column(
@@ -85,15 +85,24 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                // 🚀 AQUÍ ESTÁ LA MAGIA QUE SOLUCIONA EL 401
-                // Le pasamos el context para que guarde el token ANTES de navegar
                 viewModel.iniciarSesion(
                     context = context,
                     correo = usuario,
                     clave = contrasena,
                     onSuccess = {
-                        // Navegamos SOLO cuando estamos 100% seguros de que el token se guardó
-                        if (usuario.lowercase() == "admin") {
+                        // PASO 1: Guardamos el destino ANTES de borrar la variable 'usuario'.
+                        // Si la borramos primero, la validación fallaría.
+                        val esAdmin = usuario.lowercase() == "admin"
+
+                        // PASO 2: Limpiamos las cajas de texto dejándolas vacías
+                        usuario = ""
+                        contrasena = ""
+
+                        // PASO 3: Limpiamos el mensaje rojo de éxito/error del ViewModel
+                        viewModel.limpiarMensaje()
+
+                        // PASO 4: Navegamos a la pantalla correspondiente
+                        if (esAdmin) {
                             onNavigateToGerencia()
                         } else {
                             onNavigateToCliente()
