@@ -24,7 +24,8 @@ import com.example.travelease.viewmodel.ClienteViewModel
 fun LoginScreen(
     viewModel: ClienteViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToCliente: () -> Unit,
-    onNavigateToGerencia: () -> Unit
+    onNavigateToGerencia: () -> Unit,
+    onNavigateToAsistente: () -> Unit
 ) {
     var usuario by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
@@ -89,23 +90,21 @@ fun LoginScreen(
                     context = context,
                     correo = usuario,
                     clave = contrasena,
-                    onSuccess = {
-                        // PASO 1: Guardamos el destino ANTES de borrar la variable 'usuario'.
-                        // Si la borramos primero, la validación fallaría.
-                        val esAdmin = usuario.lowercase() == "admin"
+                    // AHORA RECIBE EL ROL DIRECTAMENTE DEL VIEWMODEL
+                    onSuccess = { rolRecibido ->
 
-                        // PASO 2: Limpiamos las cajas de texto dejándolas vacías
+                        // PASO 1: Limpiamos las cajas de texto dejándolas vacías
                         usuario = ""
                         contrasena = ""
 
-                        // PASO 3: Limpiamos el mensaje rojo de éxito/error del ViewModel
+                        // PASO 2: Limpiamos el mensaje rojo de éxito/error del ViewModel
                         viewModel.limpiarMensaje()
 
-                        // PASO 4: Navegamos a la pantalla correspondiente
-                        if (esAdmin) {
-                            onNavigateToGerencia()
-                        } else {
-                            onNavigateToCliente()
+                        // PASO 3: Navegamos a la pantalla correspondiente según el ROL de Django
+                        when (rolRecibido.lowercase()) {
+                            "admin", "gerencia" -> onNavigateToGerencia()
+                            "asistente" -> onNavigateToAsistente()
+                            else -> onNavigateToCliente() // Por defecto si es cliente
                         }
                     }
                 )

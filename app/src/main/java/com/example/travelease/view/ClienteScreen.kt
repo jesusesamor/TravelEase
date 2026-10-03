@@ -30,7 +30,7 @@ fun ClienteScreen(
     // Obtenemos el contexto de la pantalla
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    // 👉 1. ABRIMOS LA BÓVEDA Y SACAMOS EL NOMBRE REAL DEL USUARIO
+    //  1. ABRIMOS LA BÓVEDA Y SACAMOS EL NOMBRE REAL DEL USUARIO
     val sharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
     val nombreReal = sharedPreferences.getString("NOMBRE", "Cliente") ?: "Cliente"
 
@@ -49,7 +49,7 @@ fun ClienteScreen(
                 .padding(vertical = 40.dp), // Un poco más de espacio arriba
             contentAlignment = Alignment.Center
         ) {
-            // 👉 2. REEMPLAZAMOS EL TEXTO QUEMADO POR LA VARIABLE DINÁMICA
+            //  2. REEMPLAZAMOS EL TEXTO QUEMADO POR LA VARIABLE DINÁMICA
             Text(
                 text = "Hola, $nombreReal",
                 fontSize = 26.sp,

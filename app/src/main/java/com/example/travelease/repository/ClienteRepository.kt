@@ -27,15 +27,15 @@ class ClienteRepository {
                 val respuesta = RetrofitClient.apiService.enviarValoracionBackend(token, valoracion)
 
                 if (respuesta.isSuccessful) {
-                    println("✅ DJANGO DICE: GUARDADO PERFECTO (Código ${respuesta.code()})")
+                    println(" DJANGO DICE: GUARDADO PERFECTO (Código ${respuesta.code()})")
                     true
                 } else {
-                    println("🚨 DJANGO RECHAZÓ EL DATO. Código de error: ${respuesta.code()}")
-                    println("🚨 MOTIVO EXACTO: ${respuesta.errorBody()?.string()}")
+                    println(" DJANGO RECHAZÓ EL DATO. Código de error: ${respuesta.code()}")
+                    println(" MOTIVO EXACTO: ${respuesta.errorBody()?.string()}")
                     false
                 }
             } catch (e: Exception) {
-                println("🚨 ERROR DE RED O CAÍDA: ${e.message}")
+                println(" ERROR DE RED O CAÍDA: ${e.message}")
                 e.printStackTrace()
                 false
             }
@@ -48,15 +48,15 @@ class ClienteRepository {
             try {
                 val respuesta = RetrofitClient.apiService.enviarSugerencia(token, sugerencia)
                 if (respuesta.isSuccessful) {
-                    println("✅ DJANGO DICE: SUGERENCIA GUARDADA PERFECTA (Código ${respuesta.code()})")
+                    println(" DJANGO DICE: SUGERENCIA GUARDADA PERFECTA (Código ${respuesta.code()})")
                     true
                 } else {
-                    println("🚨 DJANGO RECHAZÓ LA SUGERENCIA. Código de error: ${respuesta.code()}")
-                    println("🚨 MOTIVO EXACTO: ${respuesta.errorBody()?.string()}")
+                    println(" DJANGO RECHAZÓ LA SUGERENCIA. Código de error: ${respuesta.code()}")
+                    println(" MOTIVO EXACTO: ${respuesta.errorBody()?.string()}")
                     false
                 }
             } catch (e: Exception) {
-                println("🚨 ERROR DE RED: ${e.message}")
+                println(" ERROR DE RED: ${e.message}")
                 e.printStackTrace()
                 false
             }

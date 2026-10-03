@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.travelease.model.ClienteDto
+import com.example.travelease.model.ClienteRequestDto
 import com.example.travelease.model.EncuestaDto
 import com.example.travelease.model.LoginDto
 import com.example.travelease.model.Reserva
@@ -31,10 +33,13 @@ class ClienteViewModel : ViewModel() {
     private val _listaReservas = MutableStateFlow<List<Reserva>>(emptyList())
     val listaReservas: StateFlow<List<Reserva>> = _listaReservas
 
+    // ESTADO PARA LOS CLIENTES (LECTURA)
+    private val _listaClientes = MutableStateFlow<List<ClienteDto>>(emptyList())
+    val listaClientes: StateFlow<List<ClienteDto>> = _listaClientes
+
     var loginMessage = mutableStateOf("")
         private set
 
-    // 👉 ESTA ES LA FUNCIÓN NUEVA YA UBICADA
     fun limpiarMensaje() {
         loginMessage.value = ""
     }
@@ -43,7 +48,12 @@ class ClienteViewModel : ViewModel() {
         private set
 
     // 1. Función para Iniciar Sesión
-    fun iniciarSesion(context: Context, correo: String, clave: String, onSuccess: () -> Unit) {
+    fun iniciarSesion(
+        context: Context,
+        correo: String,
+        clave: String,
+        onSuccess: (String) -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 val credenciales = LoginDto(username = correo, password = clave)
@@ -70,8 +80,7 @@ class ClienteViewModel : ViewModel() {
                     loginMessage.value = "¡Login Exitoso! Bienvenido $rolUsuario"
                     println("✅ MÁSTER DEBUG: Token y datos guardados exitosamente en SharedPreferences")
 
-                    // 👉 Solo avanzamos de pantalla cuando todo está seguro
-                    onSuccess()
+                    onSuccess(rolUsuario)
 
                 } else {
                     loginMessage.value = "Error: Credenciales incorrectas."
@@ -105,7 +114,72 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
-    // 3. Función para enviar valoraciones
+    // 3. Función para cargar los clientes reales (GET)
+    fun cargarClientes() {
+        viewModelScope.launch {
+            try {
+                println("=== 🚀 CARGANDO CLIENTES DESDE DJANGO ===")
+                val response = RetrofitClient.apiService.getClientes(authToken)
+
+                if (response.isSuccessful) {
+                    _listaClientes.value = response.body() ?: emptyList()
+                    println("✅ Éxito: Clientes descargados correctamente -> ${_listaClientes.value}")
+                } else {
+                    println("🚨 Error al cargar clientes: Código ${response.code()}")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println("🚨 Fallo de red al intentar descargar clientes: ${e.message}")
+            }
+        }
+    }
+
+    // --- 4. FUNCIÓN PARA CREAR UN CLIENTE SIN DEPARTMENT_ID ---
+    fun crearCliente(
+        nombre: String,
+        cedula: String,
+        correo: String,
+        direccion: String,
+        telefono: String,
+        departamentoStr: String,
+        municipioStr: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val munId = municipioStr.toIntOrNull() ?: 1
+
+                // Construimos el DTO exactamente como lo espera el POST de Django
+                val nuevoCliente = ClienteRequestDto(
+                    name = nombre,
+                    userEmail = correo,
+                    nationalId = cedula,
+                    address = direccion,
+                    phoneNumber = telefono,
+                    municipality = munId
+                )
+
+                println("=== 🚀 ENVIANDO NUEVO CLIENTE (REQUEST) A DJANGO ===")
+                val response = RetrofitClient.apiService.crearCliente(authToken, nuevoCliente)
+
+                if (response.isSuccessful) {
+                    println("✅ ¡Cliente registrado con éxito en la base de datos!")
+                    onSuccess()
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "Sin detalles"
+                    println("🚨 Error al crear cliente: Código ${response.code()} | Detalle de Django: $errorBody")
+                    onError("Error del servidor: ${response.code()} - $errorBody")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println("🚨 Excepción de red al crear cliente: ${e.message}")
+                onError("Fallo de conexión: ${e.message}")
+            }
+        }
+    }
+
+    // 5. Función para enviar valoraciones
     fun enviarvaloracion(
         idDeLaReserva: Int,
         paquete: String,
@@ -140,7 +214,7 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
-    // 4. Obtener viajes para valorar
+    // 6. Obtener viajes para valorar
     fun obtenerViajesParaValorar() {
         viewModelScope.launch {
             try {
@@ -156,7 +230,7 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
-    // 5. Función para enviar sugerencias
+    // 7. Función para enviar sugerencias
     fun enviarSugerencia(textoMensaje: String) {
         viewModelScope.launch {
             try {
@@ -174,7 +248,7 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
-    // 6. Función para enviar encuestas
+    // 8. Función para enviar encuestas
     fun enviarEncuesta(
         atencionAlCliente: Int,
         facilidadReserva: Int,
@@ -215,16 +289,15 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
-    // 7. Función para Cerrar Sesión
+    // 9. Función para Cerrar Sesión
     fun cerrarSesion(context: Context) {
-        // 1. Limpiamos memoria temporal
         loginMessage.value = ""
         authToken = ""
 
-        // 2. 🧹 MAGIA DE SEGURIDAD: Destruimos todo en SharedPreferences
         val sharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
         sharedPreferences.edit().clear().apply()
 
-        println("🔒 Sesión cerrada: Memoria temporal y disco duro limpiados. Listo para otro usuario.")
+        println("🔒 Sesión cerrada: Memoria temporal y disco duro limpiados.")
     }
+
 }

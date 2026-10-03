@@ -6,6 +6,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 // Importaciones de tus pantallas
 import com.example.travelease.view.LoginScreen
@@ -18,10 +21,22 @@ import com.example.travelease.view.EncuestaScreen
 import com.example.travelease.view.PaquetesVendidosScreen
 import com.example.travelease.view.IngresosDestinoScreen
 import com.example.travelease.view.TopClientesScreen
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelease.viewmodel.ClienteViewModel
+
+// ¡AQUÍ ESTÁN LAS 3 NUEVAS IMPORTACIONES QUE FALTABAN!
+import com.example.travelease.view.MenuAsistenteScreen
+import com.example.travelease.view.ClientesListScreen
+import com.example.travelease.view.ClienteFormScreen
+
+// 1. CLASE SEALED PARA LAS NUEVAS RUTAS DEL ASISTENTE (AQUÍ ESTÁ LA LÓGICA DE AURELIO)
+sealed class RutasAsistente(val ruta: String) {
+    object MenuAsistente : RutasAsistente("menu_asistente")
+    object ListaClientes : RutasAsistente("lista_clientes")
+    object FormularioCliente : RutasAsistente("formulario_cliente/{modo}") {
+        fun crearRuta(modo: String) = "formulario_cliente/$modo"
+    }
+}
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -32,7 +47,8 @@ fun AppNavigation() {
         composable("login") {
             LoginScreen(
                 onNavigateToCliente = { navController.navigate("cliente") },
-                onNavigateToGerencia = { navController.navigate("gerencia") }
+                onNavigateToGerencia = { navController.navigate("gerencia") },
+                onNavigateToAsistente = { navController.navigate(RutasAsistente.MenuAsistente.ruta) }
             )
         }
 
@@ -40,7 +56,6 @@ fun AppNavigation() {
         composable("cliente") {
             ClienteScreen(
                 onNavigateBack = { navController.popBackStack() },
-                // El botón "Valoraciones" en Figma lleva primero a la lista de reservas
                 onNavigateToMisReservas = { navController.navigate("mis_reservas") },
                 onNavigateToSugerencias = { navController.navigate("sugerencias") },
                 onNavigateToEncuesta = { navController.navigate("encuesta") }
@@ -50,11 +65,10 @@ fun AppNavigation() {
         composable(route = "mis_reservas") {
             MisReservasScreen(
                 onNavigateBack = { navController.popBackStack() },
-                // Aquí le decimos que envíe 4 datos (ID, Paquete, Factura, Total)
                 onNavigateToEvaluar = { idReserva, paquete, factura, total ->
                     navController.navigate(route = "valoraciones/$idReserva/$paquete/$factura/$total")
                 }
-            ) // <--- ¡Este es el paréntesis que faltaba!
+            )
         }
 
         composable(
@@ -70,10 +84,9 @@ fun AppNavigation() {
             val paquete = backStackEntry.arguments?.getString("paquete") ?: ""
             val factura = backStackEntry.arguments?.getString("factura") ?: ""
             val total = backStackEntry.arguments?.getString("total") ?: ""
-            // 1. Instanciamos el ViewModel directamente aquí
+
             val viewModel: ClienteViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
-            // 2. Llamamos a la pantalla usando las variables que ya extrajiste arriba
             ValoracionesScreen(
                 viewModel = viewModel,
                 idReserva = idReserva,
@@ -91,7 +104,6 @@ fun AppNavigation() {
             )
         }
 
-        // La ruta de la encuesta de satisfacción
         composable(route = "encuesta") {
             EncuestaScreen(
                 viewModel = viewModel(),
@@ -119,6 +131,47 @@ fun AppNavigation() {
 
         composable("top_clientes") {
             TopClientesScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        // --- 4. NUEVAS RUTAS DEL ASISTENTE ---
+
+        // 4.1 Pantalla Principal del Asistente (¡DESCOMENTADA!)
+        composable(RutasAsistente.MenuAsistente.ruta) {
+            MenuAsistenteScreen(
+                onNavigateToClientes = { navController.navigate(RutasAsistente.ListaClientes.ruta) },
+                onCerrarSesion = {
+                    // Regresamos al login y limpiamos el historial para que no pueda darle "atrás"
+                    navController.navigate("login") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // 4.2 Lista de Clientes Registrados (¡DESCOMENTADA!)
+        composable(RutasAsistente.ListaClientes.ruta) {
+            ClientesListScreen(
+                onNavigateToNuevo = {
+                    navController.navigate(RutasAsistente.FormularioCliente.crearRuta("crear"))
+                },
+                onNavigateToEditar = {
+                    navController.navigate(RutasAsistente.FormularioCliente.crearRuta("editar"))
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // 4.3 Formulario Dinámico (Crear / Editar) (¡DESCOMENTADA!)
+        composable(
+            route = RutasAsistente.FormularioCliente.ruta,
+            arguments = listOf(navArgument("modo") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val modo = backStackEntry.arguments?.getString("modo") ?: "crear"
+
+            ClienteFormScreen(
+                modo = modo,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

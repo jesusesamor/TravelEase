@@ -46,7 +46,7 @@ fun ValoracionesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .systemBarsPadding() // 👈 Escudo protector para que no se superponga con la barra del celular
+                .systemBarsPadding() //  Escudo protector para que no se superponga con la barra del celular
                 .padding(16.dp)
                 // 1. ESTO HACE QUE LA PANTALLA SE PUEDA DESLIZAR ARRIBA Y ABAJO:
                 .verticalScroll(rememberScrollState())

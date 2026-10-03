@@ -23,7 +23,7 @@ class GerenciaViewModel : ViewModel() {
             // Vamos al servidor a traer los datos
             val resultado = repository.obtenerTopClientes()
 
-            // Actualizamos el estado, esto le avisa al diseño de Jonathan que hay datos nuevos
+
             _topClientes.value = resultado
         }
     }

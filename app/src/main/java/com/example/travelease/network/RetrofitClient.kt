@@ -17,4 +17,5 @@ object RetrofitClient {
             .build()
             .create(TravelEaseApi::class.java)
     }
+
 }
