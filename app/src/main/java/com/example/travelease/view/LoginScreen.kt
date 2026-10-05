@@ -100,9 +100,9 @@ fun LoginScreen(
                         // PASO 2: Limpiamos el mensaje rojo de éxito/error del ViewModel
                         viewModel.limpiarMensaje()
 
-                        // PASO 3: Navegamos a la pantalla correspondiente según el ROL de Django
+                        // 🚀 PASO 3: Navegamos asegurando todas las variantes de Gerencia
                         when (rolRecibido.lowercase()) {
-                            "admin", "gerencia" -> onNavigateToGerencia()
+                            "admin", "gerencia", "gerente" -> onNavigateToGerencia()
                             "asistente" -> onNavigateToAsistente()
                             else -> onNavigateToCliente() // Por defecto si es cliente
                         }
