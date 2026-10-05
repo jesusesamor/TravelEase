@@ -25,7 +25,7 @@ import com.example.travelease.viewmodel.ClienteViewModel
 fun ClientesListScreen(
     viewModel: ClienteViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToNuevo: () -> Unit,
-    onNavigateToEditar: () -> Unit,
+    onNavigateToEditar: (Int) -> Unit, // 🚀 CAMBIO 1: Ahora recibe el ID del cliente (Int)
     onNavigateBack: () -> Unit
 ) {
     // Escuchamos la lista de clientes reales desde el ViewModel
@@ -76,7 +76,8 @@ fun ClientesListScreen(
                 items(clientes) { cliente ->
                     ClienteCard(
                         cliente = cliente,
-                        onEditarClick = onNavigateToEditar
+                        // 🚀 CAMBIO 2: Le pasamos el ID del cliente al hacer clic
+                        onEditarClick = { onNavigateToEditar(cliente.id) }
                     )
                 }
             }

@@ -14,6 +14,8 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
 interface TravelEaseApi {
 
@@ -55,4 +57,12 @@ interface TravelEaseApi {
         @Header("Authorization") token: String,
         @Body cliente: ClienteRequestDto // <-- Usamos el modelo de escritura
     ): Response<ClienteDto>
+    // Petición para ACTUALIZAR un cliente (usamos PUT o PATCH según lo que acepte tu Django)
+    @PUT("api/clients/{id}/")
+    suspend fun actualizarCliente(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body cliente: ClienteRequestDto
+    ): retrofit2.Response<ClienteDto>
+
 }

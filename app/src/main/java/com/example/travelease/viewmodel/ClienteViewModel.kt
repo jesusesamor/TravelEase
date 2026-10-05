@@ -134,7 +134,7 @@ class ClienteViewModel : ViewModel() {
         }
     }
 
-    // --- 4. FUNCIÓN PARA CREAR UN CLIENTE SIN DEPARTMENT_ID ---
+    // --- 4. FUNCIÓN PARA CREAR UN CLIENTE ---
     fun crearCliente(
         nombre: String,
         cedula: String,
@@ -150,7 +150,6 @@ class ClienteViewModel : ViewModel() {
             try {
                 val munId = municipioStr.toIntOrNull() ?: 1
 
-                // Construimos el DTO exactamente como lo espera el POST de Django
                 val nuevoCliente = ClienteRequestDto(
                     name = nombre,
                     userEmail = correo,
@@ -175,6 +174,53 @@ class ClienteViewModel : ViewModel() {
                 e.printStackTrace()
                 println("🚨 Excepción de red al crear cliente: ${e.message}")
                 onError("Fallo de conexión: ${e.message}")
+            }
+        }
+    }
+
+    // --- 4.1. FUNCIÓN PARA ACTUALIZAR UN CLIENTE EXISTENTE ---
+    fun actualizarCliente(
+        clienteId: Int,
+        nombre: String,
+        cedula: String,
+        correo: String, // 🚀 AHORA RECIBE EL CORREO DIRECTO DE LA PANTALLA
+        direccion: String,
+        telefono: String,
+        departamentoStr: String,
+        municipioStr: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val munId = municipioStr.toIntOrNull() ?: 1
+
+                val request = ClienteRequestDto(
+                    name = nombre,
+                    userEmail = correo, // Le mandamos el correo que está en el formulario
+                    nationalId = cedula,
+                    address = direccion,
+                    phoneNumber = telefono,
+                    municipality = munId
+                )
+
+                println("=== 🚀 ENVIANDO ACTUALIZACIÓN DE CLIENTE A DJANGO ===")
+                val response = RetrofitClient.apiService.actualizarCliente(authToken, clienteId, request)
+
+                if (response.isSuccessful) {
+                    println("✅ ¡Cliente actualizado con éxito!")
+                    cargarClientes() // Refrescar la lista de clientes automáticamente
+                    onSuccess()
+                } else {
+                    // 🚀 MAGIA: Extraemos el error exacto de Django para saber qué falla
+                    val errorBody = response.errorBody()?.string() ?: "Error desconocido"
+                    println("🚨 Error al actualizar cliente: Código ${response.code()} | Detalle: $errorBody")
+                    onError("Error de Django: $errorBody")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println("🚨 Excepción de red al actualizar cliente: ${e.message}")
+                onError("Error de conexión: ${e.message}")
             }
         }
     }
