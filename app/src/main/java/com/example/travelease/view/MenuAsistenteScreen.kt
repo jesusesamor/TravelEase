@@ -22,8 +22,9 @@ import com.example.travelease.viewmodel.ClienteViewModel
 
 @Composable
 fun MenuAsistenteScreen(
-    viewModel: ClienteViewModel = viewModel(), // <-- Inyectamos el ViewModel
+    viewModel: ClienteViewModel = viewModel(),
     onNavigateToClientes: () -> Unit,
+    onNavigateToServicios: () -> Unit, // 🚀 1. AGREGAMOS EL PARÁMETRO AQUÍ
     onCerrarSesion: () -> Unit
 ) {
     // 1. Obtenemos la lista de clientes en tiempo real desde el ViewModel
@@ -58,7 +59,7 @@ fun MenuAsistenteScreen(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DashboardCard(
                     titulo = "Clientes",
-                    cantidad = listaClientes.size.toString(), // <-- AQUÍ MOSTRAMOS EL TOTAL REAL DE CLIENTES
+                    cantidad = listaClientes.size.toString(),
                     iconoRes = R.drawable.icono_clientes_2,
                     modifier = Modifier.weight(1f)
                 ) {
@@ -66,10 +67,12 @@ fun MenuAsistenteScreen(
                 }
                 DashboardCard(
                     titulo = "Servicios",
-                    cantidad = "15",
+                    cantidad = "15", // Más adelante podemos hacer que este número sea dinámico también
                     iconoRes = R.drawable.icono_servicios,
                     modifier = Modifier.weight(1f)
-                ) { }
+                ) {
+                    onNavigateToServicios() // 🚀 2. SE LO ASIGNAMOS AL CLIC DE LA TARJETA
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

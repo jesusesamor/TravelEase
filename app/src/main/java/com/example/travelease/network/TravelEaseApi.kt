@@ -1,6 +1,5 @@
 package com.example.travelease.network
 
-
 import com.example.travelease.model.ClienteDto
 import com.example.travelease.model.ClienteRequestDto
 import com.example.travelease.model.EncuestaDto
@@ -9,6 +8,8 @@ import com.example.travelease.model.LoginResponse
 import com.example.travelease.model.Reserva
 import com.example.travelease.model.SugerenciaDto
 import com.example.travelease.model.ValoracionDto
+import com.example.travelease.model.Vuelo // <-- Nueva importación
+import com.example.travelease.model.VueloUpdateDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -52,11 +53,13 @@ interface TravelEaseApi {
         @Header("Authorization") token: String,
         @Body valoracion: ValoracionDto
     ): Response<Unit>
+
     @POST("api/clients/")
     suspend fun crearCliente(
         @Header("Authorization") token: String,
         @Body cliente: ClienteRequestDto // <-- Usamos el modelo de escritura
     ): Response<ClienteDto>
+
     // Petición para ACTUALIZAR un cliente (usamos PUT o PATCH según lo que acepte tu Django)
     @PUT("api/clients/{id}/")
     suspend fun actualizarCliente(
@@ -64,5 +67,42 @@ interface TravelEaseApi {
         @Path("id") id: Int,
         @Body cliente: ClienteRequestDto
     ): retrofit2.Response<ClienteDto>
+
+    //  NUEVA RUTA: Obtener la lista de vuelos (Aurelio - Bruno)
+    @GET("api/services/flights/")
+    suspend fun obtenerVuelos(
+        @Header("Authorization") token: String
+    ): Response<List<Vuelo>>
+
+    //  CREAR UN VUELO NUEVO
+    @POST("api/services/flights/")
+    suspend fun crearVuelo(
+        @Header("Authorization") token: String,
+        @Body vuelo: com.example.travelease.model.VueloRequestDto
+    ): Response<Vuelo>
+
+    //  ACTUALIZAR UN VUELO EXISTENTE (Completo)
+    @PUT("api/services/flights/{id}/")
+    suspend fun actualizarVuelo(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body vuelo: com.example.travelease.model.VueloRequestDto
+    ): Response<Vuelo>
+
+    //  ENDPOINT DE PRECIOS QUE EXPLICÓ AURELIO
+    @POST("api/services/flights/{id}/prices/")
+    suspend fun actualizarPrecioVuelo(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body priceMap: Map<String, Double>
+    ): Response<Void>
+
+    //  ACTUALIZACIÓN GENERAL SIN PRECIO (Usando DTO tipado para evitar el error de comodines en Retrofit)
+    @PUT("api/services/flights/{id}/")
+    suspend fun actualizarVueloParcial(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body vuelo: VueloUpdateDto
+    ): Response<Vuelo>
 
 }

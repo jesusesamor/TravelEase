@@ -26,15 +26,27 @@ import com.example.travelease.viewmodel.ClienteViewModel
 import com.example.travelease.view.MenuAsistenteScreen
 import com.example.travelease.view.ClientesListScreen
 import com.example.travelease.view.ClienteFormScreen
+import com.example.travelease.view.ServiciosMenuScreen
+
+// 🚀 IMPORTAMOS TUS NUEVAS PANTALLAS DE VUELOS
+import com.example.travelease.view.VuelosListScreen
+import com.example.travelease.view.VueloFormScreen // <-- NUEVA IMPORTACIÓN
 
 // 1. CLASE SEALED MEJORADA: Ahora acepta el ID en la ruta
 sealed class RutasAsistente(val ruta: String) {
     object MenuAsistente : RutasAsistente("menu_asistente")
     object ListaClientes : RutasAsistente("lista_clientes")
+    object ServiciosMenu : RutasAsistente("servicios_menu")
 
-    // 🚀 MAGIA: Ahora la ruta exige modo e id
     object FormularioCliente : RutasAsistente("formulario_cliente/{modo}/{id}") {
         fun crearRuta(modo: String, id: Int = 0) = "formulario_cliente/$modo/$id"
+    }
+
+    // 🚀 2. NUEVAS RUTAS PARA VUELOS
+    object ListaVuelos : RutasAsistente("lista_vuelos")
+
+    object FormularioVuelo : RutasAsistente("formulario_vuelo/{modo}/{id}") {
+        fun crearRuta(modo: String, id: Int = 0) = "formulario_vuelo/$modo/$id"
     }
 }
 
@@ -139,6 +151,7 @@ fun AppNavigation() {
         composable(RutasAsistente.MenuAsistente.ruta) {
             MenuAsistenteScreen(
                 onNavigateToClientes = { navController.navigate(RutasAsistente.ListaClientes.ruta) },
+                onNavigateToServicios = { navController.navigate(RutasAsistente.ServiciosMenu.ruta) },
                 onCerrarSesion = {
                     navController.navigate("login") {
                         popUpTo("login") { inclusive = true }
@@ -147,34 +160,79 @@ fun AppNavigation() {
             )
         }
 
+        composable(RutasAsistente.ServiciosMenu.ruta) {
+            ServiciosMenuScreen(
+                onNavigateToVuelos = {
+                    navController.navigate(RutasAsistente.ListaVuelos.ruta)
+                },
+                onNavigateToTransporte = {
+                    /* TODO: navController.navigate("lista_transporte") */
+                    println("Navegando a Transporte")
+                },
+                onNavigateToHoteles = {
+                    /* TODO: navController.navigate("lista_hoteles") */
+                    println("Navegando a Hoteles")
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(RutasAsistente.ListaVuelos.ruta) {
+            VuelosListScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAgregar = {
+                    navController.navigate(RutasAsistente.FormularioVuelo.crearRuta("crear", 0))
+                },
+                onNavigateToEditar = { idVuelo ->
+                    navController.navigate(RutasAsistente.FormularioVuelo.crearRuta("editar", idVuelo))
+                }
+            )
+        }
+
         composable(RutasAsistente.ListaClientes.ruta) {
             ClientesListScreen(
                 onNavigateToNuevo = {
-                    // 🚀 Al crear, pasamos ID = 0
                     navController.navigate(RutasAsistente.FormularioCliente.crearRuta("crear", 0))
                 },
                 onNavigateToEditar = { idCliente ->
-                    // 🚀 Al editar, pasamos el ID real que nos manda la lista
                     navController.navigate(RutasAsistente.FormularioCliente.crearRuta("editar", idCliente))
                 },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        // 4.3 Formulario Dinámico (Crear / Editar)
+        // Formulario Dinámico de Clientes (Crear / Editar)
         composable(
             route = RutasAsistente.FormularioCliente.ruta,
             arguments = listOf(
                 navArgument("modo") { type = NavType.StringType },
-                navArgument("id") { type = NavType.IntType } // 🚀 Le decimos a la ruta que espere un ID entero
+                navArgument("id") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val modo = backStackEntry.arguments?.getString("modo") ?: "crear"
-            val id = backStackEntry.arguments?.getInt("id") ?: 0 // Extraemos el ID
+            val id = backStackEntry.arguments?.getInt("id") ?: 0
 
             ClienteFormScreen(
                 modo = modo,
-                clienteId = id, // 🚀 ¡Se lo inyectamos a tu pantalla por fin!
+                clienteId = id,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // 🚀 FORMULARIO DINÁMICO DE VUELOS (CREAR / EDITAR)
+        composable(
+            route = RutasAsistente.FormularioVuelo.ruta,
+            arguments = listOf(
+                navArgument("modo") { type = NavType.StringType },
+                navArgument("id") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val modo = backStackEntry.arguments?.getString("modo") ?: "crear"
+            val id = backStackEntry.arguments?.getInt("id") ?: 0
+
+            VueloFormScreen(
+                modo = modo,
+                vueloId = id,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
