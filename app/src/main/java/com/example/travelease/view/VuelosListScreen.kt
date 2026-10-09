@@ -1,18 +1,23 @@
 package com.example.travelease.view
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,15 +27,15 @@ import com.example.travelease.viewmodel.VueloViewModel
 
 @Composable
 fun VuelosListScreen(
-    viewModel: VueloViewModel = viewModel(), // Inyectamos el ViewModel
+    viewModel: VueloViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToAgregar: () -> Unit,
     onNavigateToEditar: (Int) -> Unit
 ) {
     val vuelos by viewModel.vuelos.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val context = LocalContext.current
 
-    // 🚀 Cargar datos reales al abrir la pantalla usando el token global
     LaunchedEffect(Unit) {
         viewModel.cargarVuelos()
     }
@@ -63,7 +68,17 @@ fun VuelosListScreen(
                     VueloCardItem(
                         vuelo = vuelo,
                         onEditar = { onNavigateToEditar(vuelo.id) },
-                        onEliminar = { /* Lógica de eliminar próximamente */ }
+                        onEliminar = {
+                            viewModel.eliminarVuelo(
+                                vueloId = vuelo.id,
+                                onSuccess = {
+                                    Toast.makeText(context, "¡Vuelo borrado con éxito!", Toast.LENGTH_SHORT).show()
+                                },
+                                onError = { errorMsg ->
+                                    Toast.makeText(context, "Error al borrar: $errorMsg", Toast.LENGTH_LONG).show()
+                                }
+                            )
+                        }
                     )
                 }
             }
@@ -95,7 +110,6 @@ fun VueloCardItem(
     onEditar: () -> Unit,
     onEliminar: () -> Unit
 ) {
-    // Formateamos un poco la fecha si viene con formato raro de Django (T/Z)
     val fechaSalidaFormato = vuelo.fechaSalida.substringBefore("T")
     val fechaEntradaFormato = vuelo.fechaEntrada.substringBefore("T")
 
@@ -128,15 +142,40 @@ fun VueloCardItem(
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 32.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween, // 🚀 Coloca uno a cada extremo (Izquierda y Derecha)
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onEditar) {
-                    Text(text = "Editar", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                // ✏️ Botón de Editar (Lápiz) -> Lado Izquierdo
+                IconButton(
+                    onClick = onEditar,
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(Color(0xFFE3F2FD), shape = CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar Vuelo",
+                        tint = Color(0xFF1976D2),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
-                TextButton(onClick = onEliminar) {
-                    Text(text = "Eliminar", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+
+                // 🗑️ Botón de Eliminar (Basurero) -> Lado Derecho
+                IconButton(
+                    onClick = onEliminar,
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(Color(0xFFFFEBEE), shape = CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Eliminar Vuelo",
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }

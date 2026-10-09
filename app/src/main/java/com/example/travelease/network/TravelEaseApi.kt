@@ -12,6 +12,7 @@ import com.example.travelease.model.Vuelo // <-- Nueva importación
 import com.example.travelease.model.VueloUpdateDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -104,5 +105,9 @@ interface TravelEaseApi {
         @Path("id") id: Int,
         @Body vuelo: VueloUpdateDto
     ): Response<Vuelo>
-
+    @DELETE("api/services/flights/{id}/")
+    suspend fun eliminarVuelo(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): Response<Void>
 }

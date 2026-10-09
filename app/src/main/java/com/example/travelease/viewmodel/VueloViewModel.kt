@@ -71,7 +71,6 @@ class VueloViewModel : ViewModel() {
                 val tokenActual = ClienteViewModel.authToken
 
                 val isSuccess = if (modo == "crear") {
-                    // Creación normal con todos los datos incluyendo el precio
                     val requestCrear = VueloRequestDto(
                         aerolinea = aerolinea,
                         origen = origen,
@@ -82,8 +81,6 @@ class VueloViewModel : ViewModel() {
                     )
                     RetrofitClient.apiService.crearVuelo(tokenActual, requestCrear).isSuccessful
                 } else {
-                    // EDICIÓN SEPARADA (Arquitectura de Aurelio):
-                    // 1. Actualizamos datos generales usando VueloUpdateDto para OMITIR totalmente el campo 'price' en el PUT principal
                     val requestEditar = VueloUpdateDto(
                         aerolinea = aerolinea,
                         origen = origen,
@@ -95,7 +92,6 @@ class VueloViewModel : ViewModel() {
                     val responsePut = RetrofitClient.apiService.actualizarVueloParcial(tokenActual, vueloId, requestEditar)
 
                     if (responsePut.isSuccessful) {
-                        // 2. Inmediatamente mandamos el precio al endpoint secundario dedicado
                         val respPrecio = RetrofitClient.apiService.actualizarPrecioVuelo(
                             token = tokenActual,
                             id = vueloId,
@@ -116,6 +112,35 @@ class VueloViewModel : ViewModel() {
             } catch (e: Exception) {
                 e.printStackTrace()
                 onError("Fallo de red: ${e.message}")
+            }
+        }
+    }
+
+    // 🚀 FUNCIÓN PARA ELIMINAR UN VUELO DESDE EL VIEWMODEL
+    fun eliminarVuelo(
+        vueloId: Int,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val tokenActual = ClienteViewModel.authToken
+                println("=== 🚀 ELIMINANDO VUELO $vueloId EN DJANGO ===")
+
+                val response = RetrofitClient.apiService.eliminarVuelo(tokenActual, vueloId)
+
+                if (response.isSuccessful) {
+                    println("✅ ¡Éxito! Vuelo eliminado correctamente de Django.")
+                    cargarVuelos() // Refrescamos la lista de vuelos automáticamente
+                    onSuccess()
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "Sin detalles"
+                    println("🚨 Error al eliminar vuelo: $errorBody")
+                    onError(errorBody)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onError("Fallo de red al eliminar: ${e.message}")
             }
         }
     }
